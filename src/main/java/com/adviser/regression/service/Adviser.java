@@ -46,7 +46,7 @@ public class Adviser implements DataConsumer {
 
     @PostConstruct
     public void init() {
-        PersistenceUtils.loadData(this);
+//        PersistenceUtils.loadData(this);
     }
 
     public Advise getAdvise(String currency, Visualiser visualiser) {
@@ -67,8 +67,8 @@ public class Adviser implements DataConsumer {
         List<TickData> shortestTrendList = tickDataList.subList(tickDataList.size() - REGRESSION_LINE_COUNT, tickDataList.size());
 
         TrendData longTrendData = drawTrendLine(longTrendList, visualiser);
-        TrendData shortTrendData = drawTrendLine(shortTrendList, visualiser);
-        TrendData shortestTrendData = drawTrendLine(shortestTrendList, visualiser);
+        TrendData shortTrendData = drawTrendLine(shortTrendList, null);
+        TrendData shortestTrendData = drawTrendLine(shortestTrendList, null);
 
 
         Map<Float, Integer> prices = getPricesMap(tickDataList, tickDataList.size(), MODE_OFFSET);
@@ -155,7 +155,7 @@ public class Adviser implements DataConsumer {
             ticks.add(tickData);
             Integer currentCount = prices.computeIfAbsent(tickData.getPrice(), aFloat -> 0);
             prices.put(tickData.getPrice(), ++currentCount);
-            if (count % REGRESSION_LINE_COUNT == 0) {
+            if (count % REGRESSION_LINE_COUNT * 50 == 0) {
                 Advise advise = getAdvise(ticks, visualiser);
 //                    if (OrderType.SELL == advise.getOrderType() && OrderType.BUY == advise.getHedgingOrderType()) {
 //                        visualiser.drawVerticalLine(advise.getClosedTick(), "", Color.YELLOW);
@@ -170,13 +170,18 @@ public class Adviser implements DataConsumer {
             }
             count++;
         }
+        drawPoints(visualiser, true);
+        drawPoints(visualiser, false);
+    }
+
+    private void drawPoints(Visualiser visualiser, boolean mode) {
         XYSeriesCollection seriesCollection = new XYSeriesCollection();
         XYSeries series = new XYSeries("Mode");
         for (Advise advise : adviseHistory) {
-            series.add(advise.getClosedTick(), Float.parseFloat(advise.getModePrice()));
+            series.add(advise.getClosedTick(), Float.parseFloat(mode ? advise.getModePrice() : advise.getAntiModePrice()));
         }
         seriesCollection.addSeries(series);
-        visualiser.drawPoints(this.count.incrementAndGet(), seriesCollection, Color.GREEN);
+        visualiser.drawPoints(this.count.incrementAndGet(), seriesCollection, mode ? Color.GREEN : Color.BLACK);
     }
 }
 
