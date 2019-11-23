@@ -5,74 +5,46 @@ import com.adviser.regression.model.ModeData;
 import com.adviser.regression.model.OrderType;
 import com.adviser.regression.model.TickData;
 import com.adviser.regression.model.TrendData;
-import com.adviser.regression.model.VisualiserData;
 import com.adviser.regression.ui.Visualiser;
+import com.adviser.regression.utils.PersistenceUtils;
 import org.jfree.data.function.LineFunction2D;
 import org.jfree.data.general.DatasetUtilities;
 import org.jfree.data.statistics.Regression;
 import org.jfree.data.xy.XYDataset;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.awt.*;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.adviser.regression.Constants.SHORT_TREND_OFFSET;
 import static com.adviser.regression.Constants.MODE_OFFSET;
 import static com.adviser.regression.Constants.REGRESSION_LINE_COUNT;
+import static com.adviser.regression.Constants.SHORT_TREND_OFFSET;
+import static com.adviser.regression.utils.MathUtils.getModeData;
+import static com.adviser.regression.utils.MathUtils.getPricesMap;
+import static com.adviser.regression.utils.MathUtils.isUpTrend;
+import static com.adviser.regression.utils.UiUtils.getSeries;
+import static com.adviser.regression.utils.UiUtils.showRegression;
 
 @Component
-public class Adviser {
-    public static final String REAL_PRICE = "Real price";
-    private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-    public static final String TMP_FOREX_TICKS_FILE = "/tmp/forex_ticks.txt";
+public class Adviser implements DataConsumer {
+
+
     private AtomicInteger count = new AtomicInteger(0);
     private LinkedList<Advise> adviseHistory = new LinkedList<>();
 
     private Map<String, LinkedList<TickData>> ticks = new ConcurrentHashMap<>();
-    private File file = new File(TMP_FOREX_TICKS_FILE);
+
 
     @PostConstruct
     public void init() {
-        if (!file.exists()) {
-            try {
-                file.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-
-        try {
-            file.createNewFile();
-            Scanner scanner = new Scanner(file);
-            while (scanner.hasNextLine()) {
-                scanner.next();
-                scanner.next();
-                addTickData(TickData.builder()
-                        .tickNumber(scanner.nextInt())
-                        .currency("usd")
-                        .price(scanner.nextFloat())
-                        .build(), false);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
+        PersistenceUtils.loadData(this);
     }
 
     public Advise getAdvise(String currency, Visualiser visualiser) {
@@ -124,14 +96,14 @@ public class Adviser {
         return result;
     }
 
-    private TrendData drawTrendLine(List<TickData> tickDataList, Visualiser visualiser){
+    private TrendData drawTrendLine(List<TickData> tickDataList, Visualiser visualiser) {
         double[] regressionParameters = Regression.getOLSRegression(getSeries(tickDataList), 0);
 
         LineFunction2D linefunction2d = new LineFunction2D(
                 regressionParameters[0], regressionParameters[1]);
 
         int start = tickDataList.get(0).getTickNumber();
-        int tickNumber = tickDataList.get(tickDataList.size() -1).getTickNumber();
+        int tickNumber = tickDataList.get(tickDataList.size() - 1).getTickNumber();
 
 
         XYDataset dataset = DatasetUtilities.sampleFunction2D(linefunction2d,
@@ -153,59 +125,8 @@ public class Adviser {
                 .build();
     }
 
-    private XYSeriesCollection getSeries(List<TickData> shortTrendList) {
-        XYSeriesCollection seriesCollection = new XYSeriesCollection();
-        XYSeries series = new XYSeries(REAL_PRICE);
-        for (TickData tickData : shortTrendList) {
-            series.add(tickData.getTickNumber(), tickData.getPrice());
-        }
-        seriesCollection.addSeries(series);
-        return seriesCollection;
-    }
 
-    private Map<Float, Integer> getPricesMap(LinkedList<TickData> tickDataList, int size, int offset) {
-        Map<Float, Integer> prices = new HashMap<>();
-        for (TickData tickData : tickDataList.subList(size - offset, size)) {
-            Integer currentCount = prices.computeIfAbsent(tickData.getPrice(), aFloat -> 0);
-            prices.put(tickData.getPrice(), ++currentCount);
-        }
-        return prices;
-    }
-
-    private ModeData getModeData(Map<Float, Integer> prices){
-        ModeData data = new ModeData();
-        for (Map.Entry<Float, Integer> entry : prices.entrySet()) {
-            if (entry.getValue() > data.getMaxPriceCount()) {
-                data.setModePrice(entry.getKey());
-                data.setMaxPriceCount(entry.getValue());
-            }
-            if (data.getMinPriceCount() > entry.getValue()) {
-                data.setAntiModePrice(entry.getKey());
-                data.setMinPriceCount(entry.getValue());
-            }
-        }
-        return data;
-    }
-
-    private boolean isUpTrend(int start, int tickNumber, LineFunction2D linefunction2d) {
-        XYDataset dataset = DatasetUtilities.sampleFunction2D(linefunction2d,
-                start, tickNumber, 200, "");
-        float shortOpenPrice = dataset.getY(0, 0).floatValue();
-        float shortClosePrice = dataset.getY(0, 1).floatValue();
-        return shortOpenPrice < shortClosePrice;
-    }
-
-    private void showRegression(Visualiser visualiser, int adviseCount, double[] regressionParameters, XYDataset dataset, float openPrice, float closePrice, boolean up) {
-        visualiser.show(VisualiserData.builder()
-                .closePrice(closePrice)
-                .up(up)
-                .openPrice(openPrice)
-                .regressionParameters(regressionParameters)
-                .index(adviseCount)
-                .dataset(dataset)
-                .build());
-    }
-
+    @Override
     public void addTickData(TickData tickData, boolean saveToFile) throws IOException {
         ticks.computeIfAbsent(tickData.getCurrency(), s -> new LinkedList<>())
                 .add(tickData);
@@ -220,17 +141,7 @@ public class Adviser {
             return;
         }
 
-        try (PrintWriter output = new PrintWriter(new FileWriter(file, true))) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(SIMPLE_DATE_FORMAT.format(new Date()))
-                    .append(" ")
-                    .append(tickData.getCurrency())
-                    .append(" ")
-                    .append(tickData.getTickNumber())
-                    .append(" ")
-                    .append(tickData.getPrice());
-            output.printf("%s\r\n", sb.toString());
-        }
+        PersistenceUtils.saveLine(tickData);
     }
 
     public void drawLines(String currency, Visualiser visualiser) {

@@ -1,0 +1,32 @@
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Intellij
+**/.idea/
+*.iml
+*.iws
+*.ipr
+
+# Maven
+log/
+target/
+
+# Gradle
+.gradle
+build/
+
+# Other
+*.log
+**/classes/*
+catalina.*/
+bin
+*.episode
+rpm_config_override/
+activemq-data/
+out/
+emb.*/*
+
+
+.DS_Store
