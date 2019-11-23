@@ -11,6 +11,8 @@ import org.jfree.data.function.LineFunction2D;
 import org.jfree.data.general.DatasetUtilities;
 import org.jfree.data.statistics.Regression;
 import org.jfree.data.xy.XYDataset;
+import org.jfree.data.xy.XYSeries;
+import org.jfree.data.xy.XYSeriesCollection;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -72,7 +74,7 @@ public class Adviser implements DataConsumer {
         Map<Float, Integer> prices = getPricesMap(tickDataList, tickDataList.size(), MODE_OFFSET);
         ModeData modeData = getModeData(prices);
         Advise result = Advise.builder()
-                .closedTick(shortTrendData.getTickNumber())
+                .closedTick(shortTrendData.getClosedTick())
                 .closePrice(shortTrendData.getClosePrice())
                 .openPrice(shortTrendData.getOpenPrice())
                 .modePrice(String.valueOf(modeData.getModePrice()))
@@ -134,7 +136,7 @@ public class Adviser implements DataConsumer {
         if (size % 1000 == 0) {
             System.out.println("ticks size:" + size);
         }
-        if (size > MODE_OFFSET + 1) {
+        if (saveToFile && size > MODE_OFFSET + 1) {
             ticks.get(tickData.getCurrency()).removeFirst();
         }
         if (!saveToFile) {
@@ -153,23 +155,28 @@ public class Adviser implements DataConsumer {
             ticks.add(tickData);
             Integer currentCount = prices.computeIfAbsent(tickData.getPrice(), aFloat -> 0);
             prices.put(tickData.getPrice(), ++currentCount);
-            if (ticks.size() > MODE_OFFSET) {
-                if (count % REGRESSION_LINE_COUNT * 10 == 0) {
-                    Advise advise = getAdvise(ticks, visualiser);
+            if (count % REGRESSION_LINE_COUNT == 0) {
+                Advise advise = getAdvise(ticks, visualiser);
 //                    if (OrderType.SELL == advise.getOrderType() && OrderType.BUY == advise.getHedgingOrderType()) {
 //                        visualiser.drawVerticalLine(advise.getClosedTick(), "", Color.YELLOW);
 //                    }
 //                    if (OrderType.BUY == advise.getOrderType() && OrderType.SELL == advise.getHedgingOrderType()) {
 //                        visualiser.drawVerticalLine(advise.getClosedTick(), "", Color.RED);
 //                    }
-                    System.out.println(advise);
+                System.out.println(advise);
 
 //                    visualiser.drawHorizontalLine(Float.parseFloat(advise.getModePrice()), "____ " + advise.getModePrice(), Color.black);
 //                    visualiser.drawHorizontalLine(Float.parseFloat(advise.getAntiModePrice()), "___ " + advise.getAntiModePrice(), Color.RED);
-                }
             }
             count++;
         }
+        XYSeriesCollection seriesCollection = new XYSeriesCollection();
+        XYSeries series = new XYSeries("Mode");
+        for (Advise advise : adviseHistory) {
+            series.add(advise.getClosedTick(), Float.parseFloat(advise.getModePrice()));
+        }
+        seriesCollection.addSeries(series);
+        visualiser.drawPoints(this.count.incrementAndGet(), seriesCollection, Color.GREEN);
     }
 }
 

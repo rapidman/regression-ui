@@ -51,11 +51,12 @@ public class UiUtils {
         // Create the chart using the data read from the prices.txt file
         JFreeChart chart = ChartFactory.createScatterPlot(
                 "Price by ticks", "Ticks", "Prices", inputData,
-                PlotOrientation.VERTICAL, true, true, false);
+                PlotOrientation.VERTICAL, false, true, false);
 
         XYPlot plot = chart.getXYPlot();
         plot.getRenderer().setSeriesPaint(0, Color.blue);
         plot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
+        plot.setDomainPannable(true);
         return chart;
     }
 }
