@@ -156,16 +156,16 @@ public class Adviser implements DataConsumer {
             if (ticks.size() > MODE_OFFSET) {
                 if (count % REGRESSION_LINE_COUNT * 10 == 0) {
                     Advise advise = getAdvise(ticks, visualiser);
-                    if (OrderType.SELL == advise.getOrderType() && OrderType.BUY == advise.getHedgingOrderType()) {
-                        visualiser.drawVerticalLine(advise.getClosedTick(), "", Color.YELLOW);
-                    }
-                    if (OrderType.BUY == advise.getOrderType() && OrderType.SELL == advise.getHedgingOrderType()) {
-                        visualiser.drawVerticalLine(advise.getClosedTick(), "", Color.RED);
-                    }
+//                    if (OrderType.SELL == advise.getOrderType() && OrderType.BUY == advise.getHedgingOrderType()) {
+//                        visualiser.drawVerticalLine(advise.getClosedTick(), "", Color.YELLOW);
+//                    }
+//                    if (OrderType.BUY == advise.getOrderType() && OrderType.SELL == advise.getHedgingOrderType()) {
+//                        visualiser.drawVerticalLine(advise.getClosedTick(), "", Color.RED);
+//                    }
                     System.out.println(advise);
 
-                    visualiser.drawHorizontalLine(Float.parseFloat(advise.getModePrice()), "____ " + advise.getModePrice(), Color.black);
-                    visualiser.drawHorizontalLine(Float.parseFloat(advise.getAntiModePrice()), "___ " + advise.getAntiModePrice(), Color.RED);
+//                    visualiser.drawHorizontalLine(Float.parseFloat(advise.getModePrice()), "____ " + advise.getModePrice(), Color.black);
+//                    visualiser.drawHorizontalLine(Float.parseFloat(advise.getAntiModePrice()), "___ " + advise.getAntiModePrice(), Color.RED);
                 }
             }
             count++;

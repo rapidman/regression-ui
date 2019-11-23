@@ -4,10 +4,17 @@ import com.adviser.regression.model.TickData;
 import com.adviser.regression.model.VisualiserData;
 import com.adviser.regression.ui.Visualiser;
 import lombok.experimental.UtilityClass;
+import org.jfree.chart.ChartFactory;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.plot.DatasetRenderingOrder;
+import org.jfree.chart.plot.PlotOrientation;
+import org.jfree.chart.plot.XYPlot;
 import org.jfree.data.xy.XYDataset;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
+import java.awt.*;
+import java.io.IOException;
 import java.util.List;
 
 @UtilityClass
@@ -40,4 +47,15 @@ public class UiUtils {
                 .build());
     }
 
+    public static JFreeChart createChart(XYDataset inputData) throws IOException {
+        // Create the chart using the data read from the prices.txt file
+        JFreeChart chart = ChartFactory.createScatterPlot(
+                "Price by ticks", "Ticks", "Prices", inputData,
+                PlotOrientation.VERTICAL, true, true, false);
+
+        XYPlot plot = chart.getXYPlot();
+        plot.getRenderer().setSeriesPaint(0, Color.blue);
+        plot.setDatasetRenderingOrder(DatasetRenderingOrder.FORWARD);
+        return chart;
+    }
 }
