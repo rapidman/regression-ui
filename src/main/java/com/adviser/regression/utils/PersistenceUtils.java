@@ -21,7 +21,7 @@ import static org.springframework.util.ResourceUtils.getFile;
 @UtilityClass
 public class PersistenceUtils {
     private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-    public static final String TMP_FX_TICKS_FILE = "/tmp/forex_ticks.txt";
+    public static final String TMP_FX_TICKS_FILE = "/home/timur/workspace/forex/forex_ticks.txt";
     private File file = new File(TMP_FX_TICKS_FILE);
 
     public static void saveLine(TickData tickData) throws IOException {
