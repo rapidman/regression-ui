@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 
 import static com.adviser.regression.utils.UiUtils.REAL_PRICE;
 import static org.springframework.util.ResourceUtils.getFile;
@@ -21,11 +23,14 @@ import static org.springframework.util.ResourceUtils.getFile;
 @UtilityClass
 public class PersistenceUtils {
     private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-    public static final String TMP_FX_TICKS_FILE = "/home/timur/workspace/forex/forex_ticks.txt";
-    private File file = new File(TMP_FX_TICKS_FILE);
+    public static final String TMP_FX_TICKS_FILE_PREFIX = "/home/timur/workspace/forex/forex_ticks.";
+    private static Set<String> CURRENCIES = new HashSet<>();
+    static {
+        CURRENCIES.add("eur/usd");
+    }
 
     public static void saveLine(TickData tickData) throws IOException {
-        try (PrintWriter output = new PrintWriter(new FileWriter(file, true))) {
+        try (PrintWriter output = new PrintWriter(new FileWriter(TMP_FX_TICKS_FILE_PREFIX + tickData.getCurrency(), true))) {
             StringBuilder sb = new StringBuilder();
             sb.append(SIMPLE_DATE_FORMAT.format(new Date()))
                     .append(" ")
@@ -39,29 +44,32 @@ public class PersistenceUtils {
     }
 
     public static void loadData(DataConsumer dataConsumer) {
-        if (!file.exists()) {
+        for (String currency : CURRENCIES) {
+            File file = new File(TMP_FX_TICKS_FILE_PREFIX + currency);
+            if (!file.exists()) {
+                try {
+                    file.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
             try {
                 file.createNewFile();
-            } catch (IOException e) {
+                Scanner scanner = new Scanner(file);
+                while (scanner.hasNextLine()) {
+                    scanner.next();
+                    scanner.next();
+                    dataConsumer.addTickData(TickData.builder()
+                            .tickNumber(scanner.nextInt())
+                            .currency("usd")
+                            .price(scanner.nextFloat())
+                            .build(), false);
+                }
+            } catch (Exception e) {
                 e.printStackTrace();
             }
-        }
-
-
-        try {
-            file.createNewFile();
-            Scanner scanner = new Scanner(file);
-            while (scanner.hasNextLine()) {
-                scanner.next();
-                scanner.next();
-                dataConsumer.addTickData(TickData.builder()
-                        .tickNumber(scanner.nextInt())
-                        .currency("usd")
-                        .price(scanner.nextFloat())
-                        .build(), false);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 

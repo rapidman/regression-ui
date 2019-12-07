@@ -6,14 +6,14 @@ import org.jfree.ui.RefineryUtilities;
 
 import java.io.IOException;
 
-import static com.adviser.regression.utils.PersistenceUtils.TMP_FX_TICKS_FILE;
+import static com.adviser.regression.utils.PersistenceUtils.TMP_FX_TICKS_FILE_PREFIX;
 import static com.adviser.regression.utils.PersistenceUtils.createDatasetFromFile;
 
 public class PriceEstimator extends BaseVisualiser {
     private static final String CURRENCY = "USD";
 
     public static void main(String[] args) throws IOException {
-        final String inputFileName = TMP_FX_TICKS_FILE;
+        final String inputFileName = TMP_FX_TICKS_FILE_PREFIX;
         Adviser adviser = new Adviser();
         final PriceEstimator demo = new PriceEstimator(inputFileName, adviser);
         demo.pack();

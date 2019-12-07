@@ -39,7 +39,7 @@ public class Adviser implements DataConsumer {
 
 
     private AtomicInteger count = new AtomicInteger(0);
-    private LinkedList<Advise> adviseHistory = new LinkedList<>();
+    private Map<String, LinkedList<Advise>> adviseHistory = new HashMap<>();
 
     private Map<String, LinkedList<TickData>> ticks = new ConcurrentHashMap<>();
 
@@ -94,7 +94,13 @@ public class Adviser implements DataConsumer {
 //                result.setHedgingOrderType(OrderType.SELL);
 //            }
 //        }
-        adviseHistory.add(result);
+        String currency = tickDataList.get(0).getCurrency();
+        LinkedList<Advise> historyMap = adviseHistory.get(currency);
+        if (historyMap == null) {
+            historyMap = new LinkedList<>();
+            adviseHistory.put(currency, historyMap);
+        }
+        historyMap.push(result);
         return result;
     }
 
@@ -143,7 +149,7 @@ public class Adviser implements DataConsumer {
             return;
         }
 
-        PersistenceUtils.saveLine(tickData);
+//        PersistenceUtils.saveLine(tickData);
     }
 
     public void drawLines(String currency, Visualiser visualiser) {
@@ -170,14 +176,14 @@ public class Adviser implements DataConsumer {
             }
             count++;
         }
-        drawPoints(visualiser, true);
-        drawPoints(visualiser, false);
+        drawPoints(currency, visualiser, true);
+        drawPoints(currency, visualiser, false);
     }
 
-    private void drawPoints(Visualiser visualiser, boolean mode) {
+    private void drawPoints(String currency, Visualiser visualiser, boolean mode) {
         XYSeriesCollection seriesCollection = new XYSeriesCollection();
         XYSeries series = new XYSeries("Mode");
-        for (Advise advise : adviseHistory) {
+        for (Advise advise : adviseHistory.get(currency)) {
             series.add(advise.getClosedTick(), Float.parseFloat(mode ? advise.getModePrice() : advise.getAntiModePrice()));
         }
         seriesCollection.addSeries(series);
