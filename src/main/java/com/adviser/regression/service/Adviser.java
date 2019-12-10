@@ -46,7 +46,7 @@ public class Adviser implements DataConsumer {
 
     @PostConstruct
     public void init() {
-//        PersistenceUtils.loadData(this);
+        PersistenceUtils.loadData(this);
     }
 
     public Advise getAdvise(String currency, Visualiser visualiser) {
@@ -149,7 +149,7 @@ public class Adviser implements DataConsumer {
             return;
         }
 
-//        PersistenceUtils.saveLine(tickData);
+        PersistenceUtils.saveLine(tickData);
     }
 
     public void drawLines(String currency, Visualiser visualiser) {

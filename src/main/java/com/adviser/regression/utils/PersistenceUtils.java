@@ -26,7 +26,7 @@ public class PersistenceUtils {
     public static final String TMP_FX_TICKS_FILE_PREFIX = "/home/timur/workspace/forex/forex_ticks.";
     private static Set<String> CURRENCIES = new HashSet<>();
     static {
-        CURRENCIES.add("eur/usd");
+        CURRENCIES.add("eur_usd");
     }
 
     public static void saveLine(TickData tickData) throws IOException {
@@ -63,7 +63,7 @@ public class PersistenceUtils {
                     scanner.next();
                     dataConsumer.addTickData(TickData.builder()
                             .tickNumber(scanner.nextInt())
-                            .currency("usd")
+                            .currency(currency)
                             .price(scanner.nextFloat())
                             .build(), false);
                 }
