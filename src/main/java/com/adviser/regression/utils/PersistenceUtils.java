@@ -27,6 +27,10 @@ public class PersistenceUtils {
     private static Set<String> CURRENCIES = new HashSet<>();
     static {
         CURRENCIES.add("eur_usd");
+        CURRENCIES.add("aud_nzd");
+        CURRENCIES.add("usd_cad");
+        CURRENCIES.add("eur_jpy");
+        CURRENCIES.add("chf_jpy");
     }
 
     public static void saveLine(TickData tickData) throws IOException {
