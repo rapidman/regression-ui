@@ -25,26 +25,26 @@ public class PersistenceUtils {
     private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     public static final String TMP_FX_TICKS_FILE_PREFIX = "/home/timur/workspace/forex/forex_ticks.";
     private static Set<String> CURRENCIES = new HashSet<>();
-    static {
-        CURRENCIES.add("eur_usd");
-        CURRENCIES.add("aud_nzd");
-        CURRENCIES.add("usd_cad");
-        CURRENCIES.add("eur_jpy");
-        CURRENCIES.add("chf_jpy");
-    }
+//    static {
+//        CURRENCIES.add("eur_usd");
+//        CURRENCIES.add("aud_nzd");
+//        CURRENCIES.add("usd_cad");
+//        CURRENCIES.add("eur_jpy");
+//        CURRENCIES.add("chf_jpy");
+//    }
 
     public static void saveLine(TickData tickData) throws IOException {
-        try (PrintWriter output = new PrintWriter(new FileWriter(TMP_FX_TICKS_FILE_PREFIX + tickData.getCurrency(), true))) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(SIMPLE_DATE_FORMAT.format(new Date()))
-                    .append(" ")
-                    .append(tickData.getCurrency())
-                    .append(" ")
-                    .append(tickData.getTickNumber())
-                    .append(" ")
-                    .append(tickData.getPrice());
-            output.printf("%s\r\n", sb.toString());
-        }
+//        try (PrintWriter output = new PrintWriter(new FileWriter(TMP_FX_TICKS_FILE_PREFIX + tickData.getCurrency(), true))) {
+//            StringBuilder sb = new StringBuilder();
+//            sb.append(SIMPLE_DATE_FORMAT.format(new Date()))
+//                    .append(" ")
+//                    .append(tickData.getCurrency())
+//                    .append(" ")
+//                    .append(tickData.getTickNumber())
+//                    .append(" ")
+//                    .append(tickData.getPrice());
+//            output.printf("%s\r\n", sb.toString());
+//        }
     }
 
     public static void loadData(DataConsumer dataConsumer) {
