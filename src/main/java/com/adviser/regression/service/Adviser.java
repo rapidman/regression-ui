@@ -6,8 +6,10 @@ import com.adviser.regression.model.OrderType;
 import com.adviser.regression.model.TickData;
 import com.adviser.regression.model.TrendData;
 import com.adviser.regression.ui.Visualiser;
+import com.adviser.regression.utils.MathUtils;
 import com.adviser.regression.utils.PersistenceUtils;
 import org.jfree.data.function.LineFunction2D;
+import org.jfree.data.function.PowerFunction2D;
 import org.jfree.data.general.DatasetUtilities;
 import org.jfree.data.statistics.Regression;
 import org.jfree.data.xy.XYDataset;
@@ -28,6 +30,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.adviser.regression.Constants.MODE_OFFSET;
 import static com.adviser.regression.Constants.REGRESSION_LINE_COUNT;
 import static com.adviser.regression.Constants.SHORT_TREND_OFFSET;
+import static com.adviser.regression.Constants.STD_TREND_OFFSET;
+import static com.adviser.regression.Constants.STD_TRESHOLD;
 import static com.adviser.regression.utils.MathUtils.getModeData;
 import static com.adviser.regression.utils.MathUtils.getPricesMap;
 import static com.adviser.regression.utils.MathUtils.isUpTrend;
@@ -59,16 +63,21 @@ public class Adviser implements DataConsumer {
                     .orderType(OrderType.NONE)
                     .modePrice("0")
                     .antiModePrice("0")
+                    .confirmAntiModePrice("0")
                     .build();
         }
 
         List<TickData> shortTrendList = tickDataList.subList(tickDataList.size() - SHORT_TREND_OFFSET, tickDataList.size());
+        List<TickData> stdTrendList = tickDataList.subList(tickDataList.size() - STD_TREND_OFFSET, tickDataList.size());
         List<TickData> longTrendList = tickDataList.subList(tickDataList.size() - MODE_OFFSET, tickDataList.size());
         List<TickData> shortestTrendList = tickDataList.subList(tickDataList.size() - REGRESSION_LINE_COUNT, tickDataList.size());
 
-        TrendData longTrendData = drawTrendLine(longTrendList, visualiser);
-        TrendData shortTrendData = drawTrendLine(shortTrendList, null);
+        TrendData longTrendData = drawTrendLine(longTrendList, null);
+        TrendData shortTrendData = drawTrendLine(shortTrendList, visualiser);
         TrendData shortestTrendData = drawTrendLine(shortestTrendList, null);
+
+        double deviation = MathUtils.getStandardDeviation(stdTrendList);
+//        System.out.println(deviation);
 
 
         Map<Float, Integer> prices = getPricesMap(tickDataList, tickDataList.size(), MODE_OFFSET);
@@ -79,9 +88,17 @@ public class Adviser implements DataConsumer {
                 .openPrice(shortTrendData.getOpenPrice())
                 .modePrice(String.valueOf(modeData.getModePrice()))
                 .antiModePrice(String.valueOf(modeData.getAntiModePrice()))
+                .confirmAntiModePrice(String.valueOf(modeData.getConfirmAntiModePrice()))
                 .orderType(longTrendData.isUp() ? OrderType.BUY : OrderType.SELL)
                 .hedgingOrderType(shortTrendData.isShortUp() ? OrderType.BUY : OrderType.SELL)
                 .build();
+
+
+        if (deviation < STD_TRESHOLD) {
+            String confirmAntiModePrice = String.valueOf(shortestTrendList.get(shortestTrendList.size() - 1).getPrice());
+            result.setConfirmAntiModePrice(confirmAntiModePrice);
+            System.out.println("confirmAntiModePrice:" + confirmAntiModePrice);
+        }
 
 //        if (adviseHistory.size() > 0) {
 //            Advise previousAdvise = adviseHistory.getLast();
@@ -105,27 +122,28 @@ public class Adviser implements DataConsumer {
     }
 
     private TrendData drawTrendLine(List<TickData> tickDataList, Visualiser visualiser) {
-        double[] regressionParameters = Regression.getOLSRegression(getSeries(tickDataList), 0);
+        double[] regressionParameters = Regression.getPowerRegression(getSeries(tickDataList), 0);
 
-        LineFunction2D linefunction2d = new LineFunction2D(
-                regressionParameters[0], regressionParameters[1]);
+//        LineFunction2D linefunction2d = new LineFunction2D(
+//                regressionParameters[0], regressionParameters[1]);
+        PowerFunction2D powerFunction2D = new PowerFunction2D(regressionParameters[0], regressionParameters[1]);
 
-        int start = tickDataList.get(0).getTickNumber();
-        int tickNumber = tickDataList.get(tickDataList.size() - 1).getTickNumber();
+        int startTickNumber = tickDataList.get(0).getTickNumber();
+        int endTickNumber = tickDataList.get(tickDataList.size() - 1).getTickNumber();
 
 
-        XYDataset dataset = DatasetUtilities.sampleFunction2D(linefunction2d,
-                start, tickNumber, 200, "");
-        float openPrice = dataset.getY(0, 0).floatValue();
-        float closePrice = dataset.getY(0, 1).floatValue();
+        XYDataset dataset = DatasetUtilities.sampleFunction2D(powerFunction2D,
+                startTickNumber, endTickNumber, 200, "");
+        float openPrice = tickDataList.get(0).getPrice();
+        float closePrice = tickDataList.get(tickDataList.size() - 1).getPrice();
         boolean up = openPrice < closePrice;
 
         if (visualiser != null) {
             showRegression(visualiser, count.incrementAndGet(), regressionParameters, dataset, openPrice, closePrice, up);
         }
-        boolean shortUp = isUpTrend(tickDataList.get(tickDataList.size() - REGRESSION_LINE_COUNT).getTickNumber(), tickNumber, linefunction2d);
+        boolean shortUp = isUpTrend(tickDataList.get(tickDataList.size() - REGRESSION_LINE_COUNT).getTickNumber(), endTickNumber, powerFunction2D);
         return TrendData.builder()
-                .closedTick(tickNumber)
+                .closedTick(endTickNumber)
                 .closePrice(closePrice)
                 .openPrice(openPrice)
                 .up(up)
@@ -176,8 +194,8 @@ public class Adviser implements DataConsumer {
             }
             count++;
         }
-        drawPoints(currency, visualiser, true);
-        drawPoints(currency, visualiser, false);
+//        drawPoints(currency, visualiser, true);
+//        drawPoints(currency, visualiser, false);
     }
 
     private void drawPoints(String currency, Visualiser visualiser, boolean mode) {

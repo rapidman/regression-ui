@@ -10,10 +10,10 @@ import static com.adviser.regression.utils.PersistenceUtils.TMP_FX_TICKS_FILE_PR
 import static com.adviser.regression.utils.PersistenceUtils.createDatasetFromFile;
 
 public class PriceEstimator extends BaseVisualiser {
-    private static final String CURRENCY = "USD";
+    private static final String CURRENCY = "eur_usd1_";
 
     public static void main(String[] args) throws IOException {
-        final String inputFileName = TMP_FX_TICKS_FILE_PREFIX;
+        final String inputFileName = TMP_FX_TICKS_FILE_PREFIX + CURRENCY;
         Adviser adviser = new Adviser();
         final PriceEstimator demo = new PriceEstimator(inputFileName, adviser);
         demo.pack();

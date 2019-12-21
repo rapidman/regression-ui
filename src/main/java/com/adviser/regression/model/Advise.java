@@ -18,4 +18,5 @@ public class Advise {
     private float closePrice;
     private String modePrice;
     private String antiModePrice;
+    private String confirmAntiModePrice;
 }
