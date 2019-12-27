@@ -97,7 +97,7 @@ public class Adviser implements DataConsumer {
         if (deviation < STD_TRESHOLD) {
             String confirmAntiModePrice = String.valueOf(shortestTrendList.get(shortestTrendList.size() - 1).getPrice());
             result.setConfirmAntiModePrice(confirmAntiModePrice);
-            System.out.println("confirmAntiModePrice:" + confirmAntiModePrice);
+            //System.out.println("confirmAntiModePrice:" + confirmAntiModePrice);
         }
 
 //        if (adviseHistory.size() > 0) {

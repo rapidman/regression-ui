@@ -47,17 +47,19 @@ public class MathUtils {
 
 
 
-//        float amplitude = Math.abs(data.getAntiModePrice() - data.getModePrice());
-//        float antiModePriceCandidate = 0;
-//        int antiModePriceCandidateCount = 0;
-//        for (Map.Entry<Integer, Float> entry : pricesByCount.entrySet()) {
-//            float tmpAmplitude = Math.abs(entry.getValue() - data.getModePrice());
-//            if (tmpAmplitude > amplitude) {
-//                amplitude = tmpAmplitude;
-//                antiModePriceCandidate = entry.getValue();
-//                antiModePriceCandidateCount = entry.getKey();
-//            }
-//        }
+        float amplitude = Math.abs(data.getAntiModePrice() - data.getModePrice());
+        float antiModePriceCandidate = data.getAntiModePrice();
+        int antiModePriceCandidateCount = 0;
+        for (Map.Entry<Integer, Float> entry : pricesByCount.entrySet()) {
+            float tmpAmplitude = Math.abs(entry.getValue() - data.getModePrice());
+            if (tmpAmplitude > amplitude) {
+                amplitude = tmpAmplitude;
+                antiModePriceCandidate = entry.getValue();
+                antiModePriceCandidateCount = entry.getKey();
+            }
+        }
+        data.setAntiModePrice(antiModePriceCandidate);
+       // data.setConfirmAntiModePrice(antiModePriceCandidate);
 //        if (antiModePriceCandidateCount > 12) {
 //            data.setConfirmAntiModePrice(antiModePriceCandidate);
 //        }
