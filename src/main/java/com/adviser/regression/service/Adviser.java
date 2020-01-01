@@ -1,25 +1,22 @@
 package com.adviser.regression.service;
 
 import com.adviser.regression.model.Advise;
+import com.adviser.regression.model.ITickData;
 import com.adviser.regression.model.ModeData;
 import com.adviser.regression.model.OrderType;
 import com.adviser.regression.model.TickData;
 import com.adviser.regression.model.TrendData;
 import com.adviser.regression.ui.Visualiser;
-import com.adviser.regression.utils.MathUtils;
 import com.adviser.regression.utils.PersistenceUtils;
-import org.jfree.data.function.LineFunction2D;
 import org.jfree.data.function.PowerFunction2D;
 import org.jfree.data.general.DatasetUtilities;
 import org.jfree.data.statistics.Regression;
 import org.jfree.data.xy.XYDataset;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,11 +24,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.adviser.regression.Constants.ADVISE_HISTORY_OFFSET;
 import static com.adviser.regression.Constants.MODE_OFFSET;
 import static com.adviser.regression.Constants.REGRESSION_LINE_COUNT;
 import static com.adviser.regression.Constants.SHORT_TREND_OFFSET;
-import static com.adviser.regression.Constants.STD_TREND_OFFSET;
-import static com.adviser.regression.Constants.STD_TRESHOLD;
 import static com.adviser.regression.utils.MathUtils.getModeData;
 import static com.adviser.regression.utils.MathUtils.getPricesMap;
 import static com.adviser.regression.utils.MathUtils.isUpTrend;
@@ -43,9 +39,9 @@ public class Adviser implements DataConsumer {
 
 
     private AtomicInteger count = new AtomicInteger(0);
-    private Map<String, LinkedList<Advise>> adviseHistory = new HashMap<>();
+    private Map<String, List<ITickData>> adviseHistory = new HashMap<>();
 
-    private Map<String, LinkedList<TickData>> ticks = new ConcurrentHashMap<>();
+    private Map<String, LinkedList<ITickData>> ticks = new ConcurrentHashMap<>();
 
 
     @PostConstruct
@@ -57,7 +53,7 @@ public class Adviser implements DataConsumer {
         return getAdvise(new LinkedList<>(ticks.get(currency)), visualiser);
     }
 
-    public Advise getAdvise(LinkedList<TickData> tickDataList, Visualiser visualiser) {
+    public Advise getAdvise(LinkedList<ITickData> tickDataList, Visualiser visualiser) {
         if (tickDataList.size() < 1 || tickDataList.size() < MODE_OFFSET) {
             return Advise.builder()
                     .orderType(OrderType.NONE)
@@ -67,16 +63,16 @@ public class Adviser implements DataConsumer {
                     .build();
         }
 
-        List<TickData> shortTrendList = tickDataList.subList(tickDataList.size() - SHORT_TREND_OFFSET, tickDataList.size());
-        List<TickData> stdTrendList = tickDataList.subList(tickDataList.size() - STD_TREND_OFFSET, tickDataList.size());
-        List<TickData> longTrendList = tickDataList.subList(tickDataList.size() - MODE_OFFSET, tickDataList.size());
-        List<TickData> shortestTrendList = tickDataList.subList(tickDataList.size() - REGRESSION_LINE_COUNT, tickDataList.size());
+        List<ITickData> shortTrendList = tickDataList.subList(tickDataList.size() - SHORT_TREND_OFFSET, tickDataList.size());
+        // List<ITickData> stdTrendList = tickDataList.subList(tickDataList.size() - STD_TREND_OFFSET, tickDataList.size());
+//        List<ITickData> longTrendList = tickDataList.subList(tickDataList.size() - MODE_OFFSET, tickDataList.size());
+        List<ITickData> shortestTrendList = tickDataList.subList(tickDataList.size() - REGRESSION_LINE_COUNT, tickDataList.size());
 
-        TrendData longTrendData = drawTrendLine(longTrendList, null);
+//        TrendData longTrendData = drawTrendLine(longTrendList, null);
         TrendData shortTrendData = drawTrendLine(shortTrendList, visualiser);
         TrendData shortestTrendData = drawTrendLine(shortestTrendList, null);
 
-        double deviation = MathUtils.getStandardDeviation(stdTrendList);
+        // double deviation = MathUtils.getStandardDeviation(stdTrendList);
 //        System.out.println(deviation);
 
 
@@ -89,39 +85,49 @@ public class Adviser implements DataConsumer {
                 .modePrice(String.valueOf(modeData.getModePrice()))
                 .antiModePrice(String.valueOf(modeData.getAntiModePrice()))
                 .confirmAntiModePrice(String.valueOf(modeData.getConfirmAntiModePrice()))
-                .orderType(longTrendData.isUp() ? OrderType.BUY : OrderType.SELL)
+//                .orderType(longTrendData.isUp() ? OrderType.BUY : OrderType.SELL)
                 .hedgingOrderType(shortTrendData.isShortUp() ? OrderType.BUY : OrderType.SELL)
                 .build();
 
 
-        if (deviation < STD_TRESHOLD) {
-            String confirmAntiModePrice = String.valueOf(shortestTrendList.get(shortestTrendList.size() - 1).getPrice());
-            result.setConfirmAntiModePrice(confirmAntiModePrice);
-            //System.out.println("confirmAntiModePrice:" + confirmAntiModePrice);
-        }
-
-//        if (adviseHistory.size() > 0) {
-//            Advise previousAdvise = adviseHistory.getLast();
-//            if ((previousAdvise.getOrderType() == OrderType.BUY && result.getOrderType() == OrderType.BUY)
-//                    && (result.getClosePrice() - result.getOpenPrice()) > (previousAdvise.getClosePrice() - previousAdvise.getOpenPrice())) {
-//                result.setHedgingOrderType(OrderType.BUY);
-//            }
-//            if ((previousAdvise.getOrderType() == OrderType.SELL && result.getOrderType() == OrderType.SELL)
-//                    && (result.getOpenPrice() - result.getClosePrice()) > (previousAdvise.getOpenPrice() - previousAdvise.getClosePrice())) {
-//                result.setHedgingOrderType(OrderType.SELL);
-//            }
+//        if (deviation < STD_TRESHOLD) {
+//            String confirmAntiModePrice = String.valueOf(shortestTrendList.get(shortestTrendList.size() - 1).getPrice());
+//            result.setConfirmAntiModePrice(confirmAntiModePrice);
+//            //System.out.println("confirmAntiModePrice:" + confirmAntiModePrice);
 //        }
-        String currency = tickDataList.get(0).getCurrency();
-        LinkedList<Advise> historyMap = adviseHistory.get(currency);
-        if (historyMap == null) {
-            historyMap = new LinkedList<>();
-            adviseHistory.put(currency, historyMap);
+
+
+        String currency = ((TickData) tickDataList.get(0)).getCurrency();
+        List<ITickData> adviseHistory = this.adviseHistory.get(currency);
+        if (adviseHistory == null) {
+            adviseHistory = new ArrayList<>();
+            this.adviseHistory.put(currency, adviseHistory);
         }
-        historyMap.push(result);
+        adviseHistory.add(result);
+        if (adviseHistory.size() > ADVISE_HISTORY_OFFSET) {
+            adviseHistory.remove(0);
+        }
+        if (adviseHistory.size() < ADVISE_HISTORY_OFFSET) {
+            result.setOrderType(OrderType.NONE);
+        } else {
+            TrendData modeTrendData = drawTrendLine(adviseHistory, null);
+            prices = getPricesMap(adviseHistory, adviseHistory.size(), ADVISE_HISTORY_OFFSET);
+            modeData = getModeData(prices);
+            result = Advise.builder()
+                    .closedTick(shortTrendData.getClosedTick())
+                    .closePrice(shortTrendData.getClosePrice())
+                    .openPrice(shortTrendData.getOpenPrice())
+                    .modePrice(String.valueOf(modeData.getModePrice()))
+                    .antiModePrice(String.valueOf(modeData.getAntiModePrice()))
+                    .confirmAntiModePrice(String.valueOf(modeData.getConfirmAntiModePrice()))
+                    .orderType(modeTrendData.isUp() ? OrderType.BUY : OrderType.SELL)
+                    .hedgingOrderType(shortTrendData.isShortUp() ? OrderType.BUY : OrderType.SELL)
+                    .build();
+        }
         return result;
     }
 
-    private TrendData drawTrendLine(List<TickData> tickDataList, Visualiser visualiser) {
+    private TrendData drawTrendLine(List<ITickData> tickDataList, Visualiser visualiser) {
         double[] regressionParameters = Regression.getPowerRegression(getSeries(tickDataList), 0);
 
 //        LineFunction2D linefunction2d = new LineFunction2D(
@@ -154,6 +160,7 @@ public class Adviser implements DataConsumer {
 
     @Override
     public void addTickData(TickData tickData, boolean saveToFile) throws IOException {
+        tickData.setTickNumber(PersistenceUtils.TICK_COUNT.incrementAndGet());
         ticks.computeIfAbsent(tickData.getCurrency(), s -> new LinkedList<>())
                 .add(tickData);
         int size = ticks.get(tickData.getCurrency()).size();
@@ -172,10 +179,10 @@ public class Adviser implements DataConsumer {
 
     public void drawLines(String currency, Visualiser visualiser) {
         int count = 0;
-        LinkedList<TickData> ticks = new LinkedList<>();
+        LinkedList<ITickData> ticks = new LinkedList<>();
 
         Map<Float, Integer> prices = new HashMap<>();
-        for (TickData tickData : this.ticks.get(currency)) {
+        for (ITickData tickData : this.ticks.get(currency)) {
             ticks.add(tickData);
             Integer currentCount = prices.computeIfAbsent(tickData.getPrice(), aFloat -> 0);
             prices.put(tickData.getPrice(), ++currentCount);
@@ -198,14 +205,14 @@ public class Adviser implements DataConsumer {
 //        drawPoints(currency, visualiser, false);
     }
 
-    private void drawPoints(String currency, Visualiser visualiser, boolean mode) {
-        XYSeriesCollection seriesCollection = new XYSeriesCollection();
-        XYSeries series = new XYSeries("Mode");
-        for (Advise advise : adviseHistory.get(currency)) {
-            series.add(advise.getClosedTick(), Float.parseFloat(mode ? advise.getModePrice() : advise.getAntiModePrice()));
-        }
-        seriesCollection.addSeries(series);
-        visualiser.drawPoints(this.count.incrementAndGet(), seriesCollection, mode ? Color.GREEN : Color.BLACK);
-    }
+//    private void drawPoints(String currency, Visualiser visualiser, boolean mode) {
+//        XYSeriesCollection seriesCollection = new XYSeriesCollection();
+//        XYSeries series = new XYSeries("Mode");
+//        for (ITickData advise : adviseHistory.get(currency)) {
+//            series.add(advise.getClosedTick(), Float.parseFloat(mode ? advise.getModePrice() : advise.getAntiModePrice()));
+//        }
+//        seriesCollection.addSeries(series);
+//        visualiser.drawPoints(this.count.incrementAndGet(), seriesCollection, mode ? Color.GREEN : Color.BLACK);
+//    }
 }
 

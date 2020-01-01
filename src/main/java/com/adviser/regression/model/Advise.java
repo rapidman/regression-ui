@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Advise {
+public class Advise implements ITickData{
     private OrderType orderType;
     @Builder.Default
     private OrderType hedgingOrderType = OrderType.NONE;
@@ -19,4 +19,14 @@ public class Advise {
     private String modePrice;
     private String antiModePrice;
     private String confirmAntiModePrice;
+
+      @Override
+    public int getTickNumber() {
+        return closedTick;
+    }
+
+    @Override
+    public float getPrice() {
+        return Float.parseFloat(modePrice);
+    }
 }

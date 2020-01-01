@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.adviser.regression.utils.UiUtils.REAL_PRICE;
 import static org.springframework.util.ResourceUtils.getFile;
@@ -26,6 +27,7 @@ public class PersistenceUtils {
     private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
     public static final String TMP_FX_TICKS_FILE_PREFIX = "/home/timur/workspace/forex/forex_ticks.";
     private static Set<String> CURRENCIES = new HashSet<>();
+    public static AtomicInteger TICK_COUNT = new AtomicInteger(0);
     static {
         CURRENCIES.add("eur_usd1");
 //        CURRENCIES.add("aud_nzd");
@@ -67,12 +69,14 @@ public class PersistenceUtils {
                 while (scanner.hasNextLine()) {
                     scanner.next();
                     scanner.next();
+                    scanner.nextInt();
                     dataConsumer.addTickData(TickData.builder()
-                            .tickNumber(scanner.nextInt())
+                            .tickNumber(TICK_COUNT.incrementAndGet())
                             .currency(currency)
                             .price(scanner.nextFloat())
                             .build(), false);
                 }
+                System.out.println("end");
             } catch (Exception e) {
                 e.printStackTrace();
             }

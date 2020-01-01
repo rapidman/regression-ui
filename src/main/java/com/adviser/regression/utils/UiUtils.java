@@ -1,5 +1,6 @@
 package com.adviser.regression.utils;
 
+import com.adviser.regression.model.ITickData;
 import com.adviser.regression.model.TickData;
 import com.adviser.regression.model.VisualiserData;
 import com.adviser.regression.ui.Visualiser;
@@ -20,10 +21,10 @@ import java.util.List;
 @UtilityClass
 public class UiUtils {
     public static final String REAL_PRICE = "Real price";
-    public static XYSeriesCollection getSeries(List<TickData> shortTrendList) {
+    public static XYSeriesCollection getSeries(List<ITickData> shortTrendList) {
         XYSeriesCollection seriesCollection = new XYSeriesCollection();
         XYSeries series = new XYSeries(REAL_PRICE);
-        for (TickData tickData : shortTrendList) {
+        for (ITickData tickData : shortTrendList) {
             series.add(tickData.getTickNumber(), tickData.getPrice());
         }
         seriesCollection.addSeries(series);

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TickData {
+public class TickData implements ITickData {
     private String currency;
     private int tickNumber;
     private float price;

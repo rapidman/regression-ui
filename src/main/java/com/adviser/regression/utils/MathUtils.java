@@ -1,5 +1,6 @@
 package com.adviser.regression.utils;
 
+import com.adviser.regression.model.ITickData;
 import com.adviser.regression.model.ModeData;
 import com.adviser.regression.model.TickData;
 import com.adviser.regression.model.TrendData;
@@ -19,9 +20,9 @@ import java.util.TreeMap;
 
 @UtilityClass
 public class MathUtils {
-    public static Map<Float, Integer> getPricesMap(LinkedList<TickData> tickDataList, int size, int offset) {
+    public static Map<Float, Integer> getPricesMap(List<ITickData> tickDataList, int size, int offset) {
         Map<Float, Integer> prices = new HashMap<>();
-        for (TickData tickData : tickDataList.subList(size - offset, size)) {
+        for (ITickData tickData : tickDataList.subList(size - offset, size)) {
             Integer currentCount = prices.computeIfAbsent(tickData.getPrice(), aFloat -> 0);
             prices.put(tickData.getPrice(), ++currentCount);
         }
