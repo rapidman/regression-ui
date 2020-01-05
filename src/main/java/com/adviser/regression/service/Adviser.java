@@ -7,6 +7,7 @@ import com.adviser.regression.model.OrderType;
 import com.adviser.regression.model.TickData;
 import com.adviser.regression.model.TrendData;
 import com.adviser.regression.ui.Visualiser;
+import com.adviser.regression.utils.MathUtils;
 import com.adviser.regression.utils.PersistenceUtils;
 import org.jfree.data.function.PowerFunction2D;
 import org.jfree.data.general.DatasetUtilities;
@@ -28,6 +29,8 @@ import static com.adviser.regression.Constants.ADVISE_HISTORY_OFFSET;
 import static com.adviser.regression.Constants.MODE_OFFSET;
 import static com.adviser.regression.Constants.REGRESSION_LINE_COUNT;
 import static com.adviser.regression.Constants.SHORT_TREND_OFFSET;
+import static com.adviser.regression.Constants.STD_TREND_OFFSET;
+import static com.adviser.regression.Constants.STD_TRESHOLD;
 import static com.adviser.regression.utils.MathUtils.getModeData;
 import static com.adviser.regression.utils.MathUtils.getPricesMap;
 import static com.adviser.regression.utils.MathUtils.isUpTrend;
@@ -64,7 +67,7 @@ public class Adviser implements DataConsumer {
         }
 
         List<ITickData> shortTrendList = tickDataList.subList(tickDataList.size() - SHORT_TREND_OFFSET, tickDataList.size());
-        // List<ITickData> stdTrendList = tickDataList.subList(tickDataList.size() - STD_TREND_OFFSET, tickDataList.size());
+        List<ITickData> stdTrendList = tickDataList.subList(tickDataList.size() - STD_TREND_OFFSET, tickDataList.size());
 //        List<ITickData> longTrendList = tickDataList.subList(tickDataList.size() - MODE_OFFSET, tickDataList.size());
         List<ITickData> shortestTrendList = tickDataList.subList(tickDataList.size() - REGRESSION_LINE_COUNT, tickDataList.size());
 
@@ -72,8 +75,8 @@ public class Adviser implements DataConsumer {
         TrendData shortTrendData = drawTrendLine(shortTrendList, visualiser);
         TrendData shortestTrendData = drawTrendLine(shortestTrendList, null);
 
-        // double deviation = MathUtils.getStandardDeviation(stdTrendList);
-//        System.out.println(deviation);
+         double deviation = MathUtils.getStandardDeviation(shortestTrendList);
+       // System.out.println(deviation);
 
 
         Map<Float, Integer> prices = getPricesMap(tickDataList, tickDataList.size(), MODE_OFFSET);
@@ -90,11 +93,7 @@ public class Adviser implements DataConsumer {
                 .build();
 
 
-//        if (deviation < STD_TRESHOLD) {
-//            String confirmAntiModePrice = String.valueOf(shortestTrendList.get(shortestTrendList.size() - 1).getPrice());
-//            result.setConfirmAntiModePrice(confirmAntiModePrice);
-//            //System.out.println("confirmAntiModePrice:" + confirmAntiModePrice);
-//        }
+
 
 
         String currency = ((TickData) tickDataList.get(0)).getCurrency();
@@ -113,6 +112,7 @@ public class Adviser implements DataConsumer {
             TrendData modeTrendData = drawTrendLine(adviseHistory, null);
             prices = getPricesMap(adviseHistory, adviseHistory.size(), ADVISE_HISTORY_OFFSET);
             modeData = getModeData(prices);
+
             result = Advise.builder()
                     .closedTick(shortTrendData.getClosedTick())
                     .closePrice(shortTrendData.getClosePrice())
@@ -122,7 +122,13 @@ public class Adviser implements DataConsumer {
                     .confirmAntiModePrice(String.valueOf(modeData.getConfirmAntiModePrice()))
                     .orderType(modeTrendData.isUp() ? OrderType.BUY : OrderType.SELL)
                     .hedgingOrderType(shortTrendData.isShortUp() ? OrderType.BUY : OrderType.SELL)
+                    .impulse(String.valueOf(modeTrendData.isImpulse()))
                     .build();
+            if (deviation < STD_TRESHOLD) {
+                String confirmAntiModePrice = String.valueOf(stdTrendList.get(shortestTrendList.size() - 1).getPrice());
+                result.setConfirmAntiModePrice(confirmAntiModePrice);
+                //System.out.println("confirmAntiModePrice:" + confirmAntiModePrice + ", deviation:" + deviation);
+            }
         }
         return result;
     }
@@ -133,6 +139,11 @@ public class Adviser implements DataConsumer {
 //        LineFunction2D linefunction2d = new LineFunction2D(
 //                regressionParameters[0], regressionParameters[1]);
         PowerFunction2D powerFunction2D = new PowerFunction2D(regressionParameters[0], regressionParameters[1]);
+        boolean impulse = false;
+        if(regressionParameters[0] < 0 || regressionParameters[1] < 0){
+            impulse = true;
+           // System.out.println("a:"+regressionParameters[0] +", b:"+regressionParameters[1]);
+        }
 
         int startTickNumber = tickDataList.get(0).getTickNumber();
         int endTickNumber = tickDataList.get(tickDataList.size() - 1).getTickNumber();
@@ -154,6 +165,7 @@ public class Adviser implements DataConsumer {
                 .openPrice(openPrice)
                 .up(up)
                 .shortUp(shortUp)
+                .impulse(impulse)
                 .build();
     }
 

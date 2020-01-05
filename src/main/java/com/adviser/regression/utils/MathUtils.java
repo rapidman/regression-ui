@@ -40,20 +40,22 @@ public class MathUtils {
                 data.setModePrice(entry.getKey());
                 data.setMaxPriceCount(entry.getValue());
             }
-            if (data.getMinPriceCount() > entry.getValue()) {
+        }
+
+        for (Map.Entry<Float, Integer> entry : prices.entrySet()) {
+            if (data.getMinPriceCount() > entry.getValue() && Float.compare(entry.getKey(), data.getModePrice()) != 0) {
                 data.setAntiModePrice(entry.getKey());
                 data.setMinPriceCount(entry.getValue());
             }
         }
 
 
-
         float amplitude = Math.abs(data.getAntiModePrice() - data.getModePrice());
-        float antiModePriceCandidate = data.getAntiModePrice();
+        float antiModePriceCandidate = 0;
         int antiModePriceCandidateCount = 0;
         for (Map.Entry<Integer, Float> entry : pricesByCount.entrySet()) {
             float tmpAmplitude = Math.abs(entry.getValue() - data.getModePrice());
-            if (tmpAmplitude > amplitude) {
+            if (tmpAmplitude > amplitude && Float.compare(entry.getKey(), data.getModePrice()) != 0) {
                 amplitude = tmpAmplitude;
                 antiModePriceCandidate = entry.getValue();
                 antiModePriceCandidateCount = entry.getKey();
@@ -76,9 +78,9 @@ public class MathUtils {
         return shortOpenPrice < shortClosePrice;
     }
 
-    public static double getStandardDeviation(List<TickData> list){
+    public static double getStandardDeviation(List<ITickData> list){
         SummaryStatistics stats = new SummaryStatistics();
-        for (TickData data : list) {
+        for (ITickData data : list) {
             stats.addValue(data.getPrice());
         }
         return stats.getStandardDeviation();

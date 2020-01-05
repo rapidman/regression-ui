@@ -12,4 +12,5 @@ public class TrendData {
     int tickNumber;
     boolean up;
     boolean shortUp;
+    boolean impulse;
 }
