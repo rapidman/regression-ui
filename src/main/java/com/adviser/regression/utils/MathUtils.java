@@ -61,7 +61,9 @@ public class MathUtils {
                 antiModePriceCandidateCount = entry.getKey();
             }
         }
-        data.setAntiModePrice(antiModePriceCandidate);
+        if(antiModePriceCandidate > 0) {
+            data.setAntiModePrice(antiModePriceCandidate);
+        }
        // data.setConfirmAntiModePrice(antiModePriceCandidate);
 //        if (antiModePriceCandidateCount > 12) {
 //            data.setConfirmAntiModePrice(antiModePriceCandidate);

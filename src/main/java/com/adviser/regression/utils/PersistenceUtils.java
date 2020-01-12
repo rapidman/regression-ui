@@ -75,6 +75,7 @@ public class PersistenceUtils {
                             .currency(currency)
                             .price(scanner.nextFloat())
                             .build(), false);
+                    dataConsumer.getAdvise(currency, null);
                 }
                 System.out.println("end");
             } catch (Exception e) {
